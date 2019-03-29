@@ -4,8 +4,8 @@ module.exports = {
     version: "1.0.0"
   },
   Cognito: {
-    Region:  "",
-    UserPoolId: "",
+    region:  "",
+    userPoolId: "",
   },
   Mongo: {
     ip: "",
