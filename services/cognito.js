@@ -11,7 +11,7 @@ module.exports.ValidateToken = (req) => {
 
             token = token.replace('bearer ', '');
             request({
-                url: `https://cognito-idp.${config.Cognito.Region}.amazonaws.com/${config.Cognito.UserPoolId}/.well-known/jwks.json`,
+                url: `https://cognito-idp.${config.Cognito.region}.amazonaws.com/${config.Cognito.userPoolId}/.well-known/jwks.json`,
                 json: true
             }, function (error, commonr, body) {
                 if (!error && commonr.statusCode === 200) {
