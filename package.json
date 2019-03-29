@@ -1,0 +1,21 @@
+{
+  "name": "middleware",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^3.0.1",
+    "dbf-dbmodels": "^1.0.161",
+    "jsonwebtoken": "^8.5.1",
+    "jwk-to-pem": "^2.0.1",
+    "request": "^2.88.0",
+    "restify": "^8.2.0",
+    "restify-cors-middleware": "^1.1.1"
+  }
+}
