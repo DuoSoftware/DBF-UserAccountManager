@@ -63,7 +63,7 @@ module.exports.setup = async (req, res, next) => {
 
       let projectObj = {
         tenant: newWorkspace.tenant,
-        projectName: `${newWorkspace.workSpaceName}'s Initial Project`,
+        projectName: `Project 01`,
         workSpaceName: newWorkspace.workSpaceName, 
         workSpaceId: newWorkspace["_id"], 
         description: "",
