@@ -33,8 +33,8 @@ process.on('uncaughtException', function (err) {
   console.error(err);
   console.log("Node NOT Exiting...");
 });
-// config.Host.port
-server.listen(3031, () => {
+
+server.listen(config.Host.port, () => {
   console.log('%s listening at %s', server.name, server.url);
 });
 

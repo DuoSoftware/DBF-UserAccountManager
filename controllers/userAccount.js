@@ -3,7 +3,6 @@ const utils = require('../utils'),
   ProjectWorker = require('../workers/project'),
   UserWorker = require('../workers/user'),
   AccessControlWorker = require('../workers/accessControl'),
-  RoleWorker = require('../workers/role'),
   Token = require('../services/token');
 
 module.exports.setup = async (req, res, next) => {
@@ -79,26 +78,10 @@ module.exports.setup = async (req, res, next) => {
           res.send(utils.Error(500, 'Error getting while creating new project.', undefined));
         });
 
-      let roleObj = {
-        tenant: newWorkspace.tenant,
-        company: newProject.company,
-        roleName: "Super User",
-      }
-
-      const superUserPermissions = await getSuperUserPermissions();
-
-      roleObj["permissions"] = superUserPermissions;
-
-      let newRole = await RoleWorker.Create(roleObj)
-        .catch((err) => {
-          res.status(500);
-          res.send(utils.Error(500, 'Error getting while creating new role.', undefined));
-        });
-
       // both workspace and project created
       if (newWorkspace != null 
-        && newProject != null && newRole != null) {
-        console.log(`new workspace(${newWorkspace.tenant}) created. project(${newProject.company}) and role attached to that.`);
+        && newProject != null /*&& newRole != null*/) {
+        console.log(`new workspace(${newWorkspace.tenant}) created. project(${newProject.company}) attached to that.`);
 
         let workspaceOwenerObj = {
           tenant: newWorkspace.tenant, // holds default workspace id
@@ -109,8 +92,8 @@ module.exports.setup = async (req, res, next) => {
           botUniqueId: "",
           description: "",
           roles: [{
-            roleId: newRole["_id"],
-            roleName: newRole.roleName,
+            roleId: "all",
+            roleName: "Super User",
             workspaceId: newWorkspace.tenant,
             projectId: newProject.company,
           }],
@@ -172,18 +155,19 @@ module.exports.setup = async (req, res, next) => {
           if (workspaceUpdated != null
             && projectUpdated != null) {
             console.log('User account setted successfully');
-            // generate jwt token with
-            // user access and permission
+
+            // get super user permissions
+            const superUserPermissions = await getSuperUserPermissions();
 
             let obj = {
               tenant: newWorkspace.tenant,
               company: newProject.company,
               userName: workspaceOwner.userName,
               email: workspaceOwner.email,
-              permissions: getAccessRules([newRole])
+              permissions: superUserPermissions
             }
 
-            // workspaceOwenerObj["permissions"] = superUserPermissions;
+            // generate jwt token with user access and permission
             let token = Token.sign(obj);
   
             res.send(utils.Success(200, "User account setted successfully", token));
@@ -196,57 +180,27 @@ module.exports.setup = async (req, res, next) => {
     }
   } else {
     res.status(401);
-    res.send(utils.Error(401, "No user found.", undefined));
+    res.send(utils.Error(401, "User already exists.", undefined));
   }
 }
 
 const getSuperUserPermissions = async () => {
-  let permissions = [];
+  let permissions = {};
 
   let accessControls = await AccessControlWorker.GetAll()
     .catch((err) => {
-      res.status(500);
-      res.send(utils.Error(500, err.message, undefined));
+      console.log(err);
     });
 
   accessControls.forEach(accessControl => {
-    let permission = {
-      permissionName: accessControl.permissionName,
-      permissionObj: {}
+    if (!permissions[accessControl.permissionName]) {
+      permissions[accessControl.permissionName] = {}
     }
 
     accessControl.permissionObj.forEach(rule => {
-      permission.permissionObj[rule] = true;
+      permissions[accessControl.permissionName][rule] = true;
     });
-
-    permissions.push(permission);
   });
 
   return permissions;
-}
-
-const getAccessRules = (roles) => {
-  let accessRules = {};
-
-  roles.forEach(role => {
-    role.permissions.forEach(permission => {
-      let pName = permission.permissionName;
-      let rulesList = permission.permissionObj;
-      if (accessRules[pName]) {
-        for (const rule in rulesList) {
-          if (accessRules[pName].hasOwnProperty(rule)) {
-            if (!accessRules[pName][rule]) {
-              accessRules[pName][rule] = permission.permissionObj[rule];
-            }
-          } else {
-            accessRules[pName][rule] = rulesList[rule];
-          }
-        }
-      } else {
-        accessRules[pName] = rulesList;
-      }
-    });
-  });
-
-  return accessRules;
 }

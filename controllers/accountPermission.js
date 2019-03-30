@@ -1,6 +1,7 @@
 const utils = require('../utils'),
   RoleWorker = require('../workers/role'),
   UserWorker = require('../workers/user'),
+  AccessControlWorker = require('../workers/accessControl'),
   Token = require('../services/token');
 
 module.exports.get = async (req, res, next) => {
@@ -75,6 +76,8 @@ const getUser = async (username) => {
 }
 
 const getAsssignedRolesToUserUnderProject = async (roles, workspaceId, projectId) => {
+  let userRoles = [];
+
   if (roles) {
     let assignedRoleIds = roles.map((role) => {
       if (role.workspaceId == workspaceId &&
@@ -83,7 +86,8 @@ const getAsssignedRolesToUserUnderProject = async (roles, workspaceId, projectId
       }
     });
 
-    let userRoles = await RoleWorker.GetMany({
+    if (assignedRoleIds.indexOf('all') < 0) {
+      userRoles = await RoleWorker.GetMany({
         '_id': {
           $in: assignedRoleIds
         }
@@ -91,9 +95,40 @@ const getAsssignedRolesToUserUnderProject = async (roles, workspaceId, projectId
       .catch((err) => {
         console.log('Error:: failed to fetch role data', err);
       });
+    } else {
+      let superUserPermissions = await getSuperUserPermissions();
+
+      let role = {
+        roleName: "Super User",
+        permissions: superUserPermissions
+      }
+
+      userRoles.push(role);
+    }
 
     return userRoles;
   }
+}
+
+const getSuperUserPermissions = async () => {
+  let permissions = {};
+
+  let accessControls = await AccessControlWorker.GetAll()
+    .catch((err) => {
+      console.log(err);
+    });
+
+  accessControls.forEach(accessControl => {
+    if (!permissions[accessControl.permissionName]) {
+      permissions[accessControl.permissionName] = {}
+    }
+
+    accessControl.permissionObj.forEach(rule => {
+      permissions[accessControl.permissionName][rule] = true;
+    });
+  });
+
+  return permissions;
 }
 
 const isUserAllowed2AccessProject = (projects, workspaceId, projectId) => {
@@ -126,23 +161,27 @@ const getAccessRules = (roles) => {
   let accessRules = {};
 
   roles.forEach(role => {
-    role.permissions.forEach(permission => {
-      let pName = permission.permissionName;
-      let rulesList = permission.permissionObj;
-      if (accessRules[pName]) {
-        for (const rule in rulesList) {
-          if (accessRules[pName].hasOwnProperty(rule)) {
-            if (!accessRules[pName][rule]) {
-              accessRules[pName][rule] = permission.permissionObj[rule];
+    if (role.roleName == "Super User") {
+      accessRules = role.permissions;
+    } else {
+      role.permissions.forEach(permission => {
+        let pName = permission.permissionName;
+        let rulesList = permission.permissionObj;
+        if (accessRules[pName]) {
+          for (const rule in rulesList) {
+            if (accessRules[pName].hasOwnProperty(rule)) {
+              if (!accessRules[pName][rule]) {
+                accessRules[pName][rule] = permission.permissionObj[rule];
+              }
+            } else {
+              accessRules[pName][rule] = rulesList[rule];
             }
-          } else {
-            accessRules[pName][rule] = rulesList[rule];
           }
+        } else {
+          accessRules[pName] = rulesList;
         }
-      } else {
-        accessRules[pName] = rulesList;
-      }
-    });
+      });
+    }
   });
 
   return accessRules;
