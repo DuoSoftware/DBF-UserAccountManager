@@ -164,7 +164,11 @@ module.exports.setup = async (req, res, next) => {
               company: newProject.company,
               userName: workspaceOwner.userName,
               email: workspaceOwner.email,
-              permissions: superUserPermissions
+              permissions: superUserPermissions,
+              subscription : {
+                current : "free_plan",
+                intented : "self_managed_plan"
+              }
             }
 
             // generate jwt token with user access and permission
