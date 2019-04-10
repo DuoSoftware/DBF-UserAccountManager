@@ -46,6 +46,7 @@ module.exports.setup = async (req, res, next) => {
 
       let workspaceObj = {
         workSpaceName: payload.workspaceName,
+        billingAccount: user.sub,
         projects: [],
         users: [],
         description: "",
