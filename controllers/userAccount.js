@@ -20,6 +20,20 @@ module.exports.setup = async (req, res, next) => {
     return;
   }
 
+  // validates subscription plan
+  if (!payload.planName)
+    payload["planName"] = "free_plan";
+  else {
+    let availablePlans = ["free_plan", "self_managed_plan", "kick_starter_plan", "fully_managed_plan"];
+    if (!availablePlans.includes(payload.planName)) {
+      console.log(`Trying to access invalid subscription plan(${payload.planName})`);
+
+      res.status(400);
+      res.send(utils.Error(400, `Trying to access invalid subscription plan(${payload.planName})`));
+      return;
+    } 
+  }
+
   // check user already exists 
   let _user = await UserWorker.GetOne({
     userName: user.sub
@@ -111,6 +125,10 @@ module.exports.setup = async (req, res, next) => {
             projectName: newProject.projectName,
             workspaceId: newWorkspace.tenant
           }],
+          subscription : {
+            current : "free_plan",
+            intented : payload.planName
+          }
         }
 
         // create workspace owner
@@ -166,10 +184,7 @@ module.exports.setup = async (req, res, next) => {
               userName: workspaceOwner.userName,
               email: workspaceOwner.email,
               permissions: superUserPermissions,
-              subscription : {
-                current : "free_plan",
-                intented : "self_managed_plan"
-              }
+              subscription : workspaceOwner.subscription
             }
 
             // generate jwt token with user access and permission

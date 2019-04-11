@@ -44,10 +44,7 @@ module.exports.get = async (req, res, next) => {
         userName: authUser.sub,
         email: authUser.email,
         permissions: accessRules,
-        subscription : {
-          current : "free_plan",
-          intented : "self_managed_plan"
-        }
+        subscription : user.subscription
       }
 
       // generate jwt token

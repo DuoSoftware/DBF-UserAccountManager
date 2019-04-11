@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "config": "^3.0.1",
-    "dbf-dbmodels": "^1.0.169",
+    "dbf-dbmodels": "^1.0.170",
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^2.0.1",
     "request": "^2.88.0",
