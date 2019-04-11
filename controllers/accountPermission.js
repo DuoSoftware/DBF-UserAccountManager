@@ -44,7 +44,6 @@ module.exports.get = async (req, res, next) => {
         userName: authUser.sub,
         email: authUser.email,
         permissions: accessRules,
-        subscription : user.subscription
       }
 
       // generate jwt token
